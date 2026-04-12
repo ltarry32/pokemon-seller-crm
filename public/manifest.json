@@ -1,0 +1,43 @@
+{
+  "name": "CardVault — Pokémon Seller CRM",
+  "short_name": "CardVault",
+  "description": "Professional Pokémon card seller and buyer tool",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f0f11",
+  "theme_color": "#f97316",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "View your business dashboard"
+    },
+    {
+      "name": "Add Card",
+      "url": "/inventory/add",
+      "description": "Add a card to inventory"
+    },
+    {
+      "name": "Log Sale",
+      "url": "/sold",
+      "description": "Record a completed sale"
+    }
+  ]
+}
