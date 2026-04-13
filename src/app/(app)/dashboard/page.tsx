@@ -1,100 +1,124 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { useAppStore } from '@/stores/appStore';
-import { computeInventoryKPIs } from '@/data/mockInventory';
-import { computeSalesKPIs, groupByMonth } from '@/data/mockSoldTransactions';
-import { StatCard } from '@/components/ui/Card';
-import { ProfitTrendChart } from '@/components/dashboard/ProfitChart';
-import { InventoryCard } from '@/components/inventory/InventoryCard';
-import { SoldCard } from '@/components/sold/SoldCard';
-import { Button } from '@/components/ui/Button';
-import { PageHeader } from '@/components/layout/Header';
+import Link from 'next/link'
+import { useInventoryItems } from '@/hooks/useInventory'
+import { useSoldTransactions, useSalesKPIs } from '@/hooks/useSoldLog'
+import { StatCard } from '@/components/ui/Card'
+import { ProfitTrendChart } from '@/components/dashboard/ProfitChart'
+import { InventoryCard } from '@/components/inventory/InventoryCard'
+import { SoldCard } from '@/components/sold/SoldCard'
+import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/layout/Header'
+import { CardSkeleton, StatSkeleton } from '@/components/ui/EmptyState'
 import {
   TrendingUp, Package, ShoppingBag, DollarSign,
-  ScanLine, Calculator, Plus, ArrowRight, Zap
-} from 'lucide-react';
-import { formatCurrency, formatPercent } from '@/lib/utils';
+  ScanLine, Calculator, Plus, ArrowRight,
+} from 'lucide-react'
+import { formatCurrency, formatPercent } from '@/lib/utils'
+import type { InventoryItemRow, SoldTransactionRow } from '@/lib/supabase/database.types'
+
+// ─── Inventory KPIs (derived from live data) ─────────────────
+
+function computeInventoryKPIs(items: InventoryItemRow[]) {
+  const active    = items.filter(i => i.status !== 'sold')
+  const totalValue = active.reduce((s, i) => s + i.current_market_price * i.quantity, 0)
+  const totalCost  = active.reduce((s, i) => s + i.cost_basis * i.quantity, 0)
+  return {
+    totalValue,
+    totalCost,
+    unrealizedProfit: totalValue - totalCost,
+    itemCount: active.length,
+  }
+}
+
+// ─── Monthly grouping for chart ───────────────────────────────
+
+function groupByMonth(transactions: SoldTransactionRow[]) {
+  const map = new Map<string, { revenue: number; profit: number; cost: number; sales_count: number }>()
+  transactions.forEach(t => {
+    const month = t.date_sold.slice(0, 7)
+    const ex = map.get(month) ?? { revenue: 0, profit: 0, cost: 0, sales_count: 0 }
+    map.set(month, {
+      revenue:     ex.revenue + t.sold_price,
+      profit:      ex.profit  + (t.net_profit ?? 0),
+      cost:        ex.cost    + t.cost_basis,
+      sales_count: ex.sales_count + 1,
+    })
+  })
+  return Array.from(map.entries())
+    .map(([month, d]) => ({ month, ...d }))
+    .sort((a, b) => a.month.localeCompare(b.month))
+}
 
 export default function DashboardPage() {
-  const { inventory, soldTransactions } = useAppStore();
+  const { data: inventory = [],     isLoading: invLoading }  = useInventoryItems()
+  const { data: transactions = [],  isLoading: salesLoading } = useSoldTransactions()
 
-  const invKPIs  = computeInventoryKPIs(inventory);
-  const salesKPIs = computeSalesKPIs(soldTransactions);
-  const monthlyData = groupByMonth(soldTransactions);
+  const invKPIs    = computeInventoryKPIs(inventory)
+  const salesKPIs  = useSalesKPIs(transactions)
+  const monthlyData = groupByMonth(transactions)
 
-  // Top 3 items by unrealized profit
-  const topItems = [...inventory]
+  const topItems    = [...inventory]
     .filter(i => i.status !== 'sold')
     .sort((a, b) => (b.current_market_price - b.cost_basis) - (a.current_market_price - a.cost_basis))
-    .slice(0, 3);
+    .slice(0, 3)
 
-  const recentSales = soldTransactions.slice(0, 3);
+  const recentSales = transactions.slice(0, 3)
 
   return (
     <div className="page-container space-y-6 animate-fade-in">
       <PageHeader
         title="Dashboard"
-        subtitle={`${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
+        subtitle={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         actions={
           <Link href="/inventory/add">
-            <Button size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>
-              Add Card
-            </Button>
+            <Button size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>Add Card</Button>
           </Link>
         }
       />
 
-      {/* Demo banner */}
-      <div className="flex items-center gap-3 p-3 bg-brand-500/10 border border-brand-500/20 rounded-2xl">
-        <Zap className="w-4 h-4 text-brand-400 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-brand-300">Demo Mode Active</p>
-          <p className="text-xs text-zinc-500">Showing sample data. Connect Supabase in Settings to go live.</p>
-        </div>
-        <Link href="/settings">
-          <Button variant="ghost" size="sm">Setup →</Button>
-        </Link>
-      </div>
-
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard
-          label="Portfolio Value"
-          value={formatCurrency(invKPIs.totalValue, 0)}
-          sub={`${invKPIs.itemCount} cards`}
-          trend="up"
-          trendValue={formatCurrency(invKPIs.unrealizedProfit, 0) + ' unrealized'}
-          icon={<Package className="w-5 h-5 text-blue-400" />}
-          highlight
-        />
-        <StatCard
-          label="Total Profit"
-          value={formatCurrency(salesKPIs.totalProfit, 0)}
-          sub={`${salesKPIs.salesCount} sales`}
-          trend={salesKPIs.totalProfit > 0 ? 'up' : 'down'}
-          trendValue={formatPercent(salesKPIs.profitMargin) + ' margin'}
-          icon={<TrendingUp className="w-5 h-5 text-profit" />}
-        />
-        <StatCard
-          label="Revenue"
-          value={formatCurrency(salesKPIs.totalRevenue, 0)}
-          sub="all time"
-          trend="up"
-          icon={<DollarSign className="w-5 h-5 text-brand-400" />}
-        />
-        <StatCard
-          label="Fees Paid"
-          value={formatCurrency(salesKPIs.totalFees, 0)}
-          sub="all platforms"
-          trend="down"
-          trendValue={formatPercent(-((salesKPIs.totalFees / Math.max(salesKPIs.totalRevenue, 1)) * 100)) + ' of revenue'}
-          icon={<ShoppingBag className="w-5 h-5 text-zinc-400" />}
-        />
-      </div>
+      {invLoading || salesLoading ? (
+        <div className="grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            label="Portfolio Value"
+            value={formatCurrency(invKPIs.totalValue, 0)}
+            sub={`${invKPIs.itemCount} cards`}
+            trend="up"
+            trendValue={formatCurrency(invKPIs.unrealizedProfit, 0) + ' unrealized'}
+            icon={<Package className="w-5 h-5 text-blue-400" />}
+            highlight
+          />
+          <StatCard
+            label="Total Profit"
+            value={formatCurrency(salesKPIs.totalProfit, 0)}
+            sub={`${salesKPIs.salesCount} sales`}
+            trend={salesKPIs.totalProfit >= 0 ? 'up' : 'down'}
+            trendValue={formatPercent(salesKPIs.profitMargin) + ' margin'}
+            icon={<TrendingUp className="w-5 h-5 text-profit" />}
+          />
+          <StatCard
+            label="Revenue"
+            value={formatCurrency(salesKPIs.totalRevenue, 0)}
+            sub="all time"
+            trend="up"
+            icon={<DollarSign className="w-5 h-5 text-brand-400" />}
+          />
+          <StatCard
+            label="Fees Paid"
+            value={formatCurrency(salesKPIs.totalFees, 0)}
+            sub="all platforms"
+            icon={<ShoppingBag className="w-5 h-5 text-zinc-400" />}
+          />
+        </div>
+      )}
 
       {/* Profit trend chart */}
-      {monthlyData.length > 0 && (
+      {!salesLoading && monthlyData.length > 0 && (
         <div className="bg-surface-1 border border-zinc-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -102,21 +126,13 @@ export default function DashboardPage() {
               <p className="text-xs text-zinc-500 mt-0.5">Revenue vs profit over time</p>
             </div>
             <Link href="/analytics">
-              <Button variant="ghost" size="sm">
-                Full Report <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
+              <Button variant="ghost" size="sm">Full Report <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button>
             </Link>
           </div>
           <ProfitTrendChart data={monthlyData} />
           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-zinc-800">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-0.5 bg-brand-500 rounded" />
-              <span className="text-xs text-zinc-500">Revenue</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-0.5 bg-profit rounded" />
-              <span className="text-xs text-zinc-500">Profit</span>
-            </div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-0.5 bg-brand-500 rounded" /><span className="text-xs text-zinc-500">Revenue</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-0.5 bg-profit rounded" /><span className="text-xs text-zinc-500">Profit</span></div>
           </div>
         </div>
       )}
@@ -148,42 +164,41 @@ export default function DashboardPage() {
       </div>
 
       {/* Top inventory */}
-      {topItems.length > 0 && (
+      {!invLoading && topItems.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-zinc-300">Top Holdings</h3>
             <Link href="/inventory">
-              <Button variant="ghost" size="sm">
-                All <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
+              <Button variant="ghost" size="sm">All <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button>
             </Link>
           </div>
           <div className="space-y-2">
-            {topItems.map(item => (
-              <InventoryCard key={item.id} item={item} compact />
-            ))}
+            {topItems.map(item => <InventoryCard key={item.id} item={item} compact />)}
           </div>
         </div>
       )}
 
+      {/* Skeleton while loading */}
+      {invLoading && (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
+        </div>
+      )}
+
       {/* Recent sales */}
-      {recentSales.length > 0 && (
+      {!salesLoading && recentSales.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-zinc-300">Recent Sales</h3>
             <Link href="/sold">
-              <Button variant="ghost" size="sm">
-                All <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
+              <Button variant="ghost" size="sm">All <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button>
             </Link>
           </div>
           <div className="space-y-2">
-            {recentSales.map(tx => (
-              <SoldCard key={tx.id} transaction={tx} />
-            ))}
+            {recentSales.map(tx => <SoldCard key={tx.id} transaction={tx} />)}
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }

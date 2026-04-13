@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useAppStore } from '@/stores/appStore';
 import { PageHeader } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -76,7 +75,6 @@ const DEFAULT_INPUT: FeeCalculatorInput = {
 };
 
 export default function CalculatorPage() {
-  const { feeProfiles } = useAppStore();
   const [selectedPreset, setSelectedPreset] = useState('ebay');
   const [input, setInput] = useState<FeeCalculatorInput>(DEFAULT_INPUT);
 

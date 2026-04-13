@@ -1,45 +1,88 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useAppStore } from '@/stores/appStore';
-import { computeSalesKPIs, groupByMonth } from '@/data/mockSoldTransactions';
-import { computeInventoryKPIs } from '@/data/mockInventory';
+import { useInventoryItems } from '@/hooks/useInventory';
+import { useSoldTransactions } from '@/hooks/useSoldLog';
 import { PageHeader } from '@/components/layout/Header';
 import { StatCard, Card } from '@/components/ui/Card';
+import { CardSkeleton } from '@/components/ui/EmptyState';
 import { ProfitTrendChart, PlatformChart } from '@/components/dashboard/ProfitChart';
 import { formatCurrency, formatPercent, profitClass, cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Package, DollarSign, BarChart3, ShoppingBag } from 'lucide-react';
+import type { InventoryItemRow, SoldTransactionRow } from '@/lib/supabase/database.types';
+
+// ─── Pure KPI computation helpers ────────────────────────────────
+
+function computeInventoryKPIs(items: InventoryItemRow[]) {
+  const active = items.filter(i => i.status !== 'sold');
+  const totalValue   = active.reduce((s, i) => s + i.current_market_price * i.quantity, 0);
+  const totalCost    = active.reduce((s, i) => s + i.cost_basis * i.quantity, 0);
+  const unrealizedProfit = totalValue - totalCost;
+  const avgROI = totalCost > 0 ? (unrealizedProfit / totalCost) * 100 : 0;
+  return { totalValue, totalCost, unrealizedProfit, avgROI, itemCount: active.length };
+}
+
+function computeSalesKPIs(txs: SoldTransactionRow[]) {
+  const totalRevenue = txs.reduce((s, t) => s + t.sold_price, 0);
+  const totalProfit  = txs.reduce((s, t) => s + (t.net_profit ?? 0), 0);
+  const totalFees    = txs.reduce((s, t) => s + (t.fees ?? 0), 0);
+  return { totalRevenue, totalProfit, totalFees, salesCount: txs.length };
+}
+
+function groupByMonth(txs: SoldTransactionRow[]) {
+  const map = new Map<string, { month: string; revenue: number; profit: number }>();
+  txs.forEach(t => {
+    const month = t.date_sold.slice(0, 7); // "YYYY-MM"
+    const ex = map.get(month) ?? { month, revenue: 0, profit: 0 };
+    map.set(month, {
+      month,
+      revenue: ex.revenue + t.sold_price,
+      profit:  ex.profit  + (t.net_profit ?? 0),
+    });
+  });
+  return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
+}
+
+// ─── Page ─────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const { inventory, soldTransactions } = useAppStore();
+  const { data: inventory = [], isLoading: invLoading }   = useInventoryItems();
+  const { data: transactions = [], isLoading: txLoading } = useSoldTransactions();
 
-  const invKPIs  = useMemo(() => computeInventoryKPIs(inventory), [inventory]);
-  const salesKPIs = useMemo(() => computeSalesKPIs(soldTransactions), [soldTransactions]);
-  const monthlyData = useMemo(() => groupByMonth(soldTransactions), [soldTransactions]);
+  const isLoading = invLoading || txLoading;
+
+  const invKPIs    = useMemo(() => computeInventoryKPIs(inventory),    [inventory]);
+  const salesKPIs  = useMemo(() => computeSalesKPIs(transactions),     [transactions]);
+  const monthlyData = useMemo(() => groupByMonth(transactions),        [transactions]);
 
   // Platform breakdown
   const platformData = useMemo(() => {
     const map = new Map<string, { revenue: number; profit: number; count: number }>();
-    soldTransactions.forEach(t => {
-      const ex = map.get(t.platform) ?? { revenue: 0, profit: 0, count: 0 };
-      map.set(t.platform, { revenue: ex.revenue + t.sold_price, profit: ex.profit + t.net_profit, count: ex.count + 1 });
+    transactions.forEach(t => {
+      const platform = t.platform ?? 'Other';
+      const ex = map.get(platform) ?? { revenue: 0, profit: 0, count: 0 };
+      map.set(platform, {
+        revenue: ex.revenue + t.sold_price,
+        profit:  ex.profit  + (t.net_profit ?? 0),
+        count:   ex.count + 1,
+      });
     });
     return Array.from(map.entries()).map(([platform, d]) => ({ platform, ...d }));
-  }, [soldTransactions]);
+  }, [transactions]);
 
   // Top cards by profit
   const topCards = useMemo(() =>
-    [...soldTransactions].sort((a, b) => b.net_profit - a.net_profit).slice(0, 5),
-    [soldTransactions]
+    [...transactions].sort((a, b) => (b.net_profit ?? 0) - (a.net_profit ?? 0)).slice(0, 5),
+    [transactions]
   );
 
   // Worst cards
   const worstCards = useMemo(() =>
-    [...soldTransactions].sort((a, b) => a.net_profit - b.net_profit).slice(0, 3),
-    [soldTransactions]
+    [...transactions].sort((a, b) => (a.net_profit ?? 0) - (b.net_profit ?? 0)).slice(0, 3),
+    [transactions]
   );
 
-  // Set performance
+  // Set performance (active inventory)
   const setData = useMemo(() => {
     const map = new Map<string, { cost: number; value: number; count: number }>();
     inventory.filter(i => i.status !== 'sold').forEach(i => {
@@ -51,9 +94,24 @@ export default function AnalyticsPage() {
       });
     });
     return Array.from(map.entries())
-      .map(([set_name, d]) => ({ set_name, ...d, profit: d.value - d.cost, roi: d.cost > 0 ? ((d.value - d.cost) / d.cost) * 100 : 0 }))
+      .map(([set_name, d]) => ({
+        set_name, ...d,
+        profit: d.value - d.cost,
+        roi: d.cost > 0 ? ((d.value - d.cost) / d.cost) * 100 : 0,
+      }))
       .sort((a, b) => b.profit - a.profit);
   }, [inventory]);
+
+  if (isLoading) {
+    return (
+      <div className="page-container space-y-4 animate-fade-in">
+        <PageHeader title="Analytics" subtitle="Loading..." />
+        <div className="grid grid-cols-2 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container space-y-6 animate-fade-in">
@@ -61,7 +119,7 @@ export default function AnalyticsPage() {
 
       {/* Top KPIs */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Portfolio Value"   value={formatCurrency(invKPIs.totalValue, 0)}   sub={`${invKPIs.itemCount} cards`} icon={<Package className="w-5 h-5 text-blue-400" />} highlight />
+        <StatCard label="Portfolio Value"   value={formatCurrency(invKPIs.totalValue, 0)}    sub={`${invKPIs.itemCount} cards`} icon={<Package className="w-5 h-5 text-blue-400" />} highlight />
         <StatCard label="Realized Profit"   value={formatCurrency(salesKPIs.totalProfit, 0)} sub={`${salesKPIs.salesCount} sales`} icon={<TrendingUp className="w-5 h-5 text-profit" />} />
         <StatCard label="Unrealized Profit" value={formatCurrency(invKPIs.unrealizedProfit, 0)} trend={invKPIs.unrealizedProfit >= 0 ? 'up' : 'down'} icon={<BarChart3 className="w-5 h-5 text-brand-400" />} />
         <StatCard label="Avg ROI"           value={formatPercent(invKPIs.avgROI)} trend={invKPIs.avgROI >= 0 ? 'up' : 'down'} icon={<TrendingUp className="w-5 h-5 text-zinc-400" />} />
@@ -117,8 +175,8 @@ export default function AnalyticsPage() {
                   <p className="text-sm font-medium text-zinc-200 truncate">{t.card_name}</p>
                   <p className="text-xs text-zinc-500">{t.set_name} · {t.platform}</p>
                 </div>
-                <p className={cn('text-sm font-bold shrink-0', profitClass(t.net_profit))}>
-                  +{formatCurrency(t.net_profit)}
+                <p className={cn('text-sm font-bold shrink-0', profitClass(t.net_profit ?? 0))}>
+                  +{formatCurrency(t.net_profit ?? 0)}
                 </p>
               </div>
             ))}
@@ -145,7 +203,6 @@ export default function AnalyticsPage() {
                     <p className={cn('text-xs', profitClass(s.roi))}>{formatPercent(s.roi)} ROI</p>
                   </div>
                 </div>
-                {/* Mini progress bar */}
                 <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
                   <div
                     className={cn('h-full rounded-full', s.roi >= 0 ? 'bg-profit' : 'bg-loss')}
@@ -159,21 +216,29 @@ export default function AnalyticsPage() {
       )}
 
       {/* Worst performers */}
-      {worstCards.length > 0 && worstCards.some(t => t.net_profit < 0) && (
+      {worstCards.length > 0 && worstCards.some(t => (t.net_profit ?? 0) < 0) && (
         <Card variant="danger">
           <h3 className="font-semibold text-zinc-100 text-sm mb-4">Worst Performers</h3>
           <div className="space-y-2">
-            {worstCards.filter(t => t.net_profit < 0).map(t => (
+            {worstCards.filter(t => (t.net_profit ?? 0) < 0).map(t => (
               <div key={t.id} className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-zinc-300">{t.card_name}</p>
                   <p className="text-xs text-zinc-500">{t.platform}</p>
                 </div>
-                <p className="text-sm font-bold text-loss">{formatCurrency(t.net_profit)}</p>
+                <p className="text-sm font-bold text-loss">{formatCurrency(t.net_profit ?? 0)}</p>
               </div>
             ))}
           </div>
         </Card>
+      )}
+
+      {/* Empty state */}
+      {transactions.length === 0 && inventory.length === 0 && (
+        <div className="text-center py-16 text-zinc-600">
+          <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No data yet — add cards and log sales to see analytics.</p>
+        </div>
       )}
     </div>
   );

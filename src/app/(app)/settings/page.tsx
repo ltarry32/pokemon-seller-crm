@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { ExternalLink, Check, X, Copy, Zap, Database, Link2, Shield } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { signOut } from '@/lib/actions/auth';
 import { PageHeader } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -86,9 +88,14 @@ const STATUS_STYLES = {
 // ─── Page ─────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<string>('integrations');
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
+
+  const displayName  = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'User';
+  const displayEmail = user?.email ?? '';
+  const initial      = (displayName[0] ?? 'U').toUpperCase();
 
   const handleSaveKey = (integrationId: string, key: string, value: string) => {
     setApiKeys(prev => ({ ...prev, [key]: value }));
@@ -253,20 +260,24 @@ export default function SettingsPage() {
           <Card>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xl font-bold text-brand-400">
-                D
+                {initial}
               </div>
               <div>
-                <p className="font-semibold text-zinc-100">Demo Seller</p>
-                <p className="text-xs text-zinc-500">demo@cardvault.io</p>
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-brand-400 bg-brand-500/10 border border-brand-500/20 px-2 py-0.5 rounded-full mt-1">
-                  <Zap className="w-2.5 h-2.5" /> Demo Mode
+                <p className="font-semibold text-zinc-100">{displayName}</p>
+                <p className="text-xs text-zinc-500">{displayEmail}</p>
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-profit bg-profit/10 border border-profit/20 px-2 py-0.5 rounded-full mt-1">
+                  <Zap className="w-2.5 h-2.5" /> Live
                 </span>
               </div>
             </div>
-            <p className="text-xs text-zinc-500 bg-zinc-800/50 rounded-xl p-3">
-              Connect Supabase to enable real authentication. User profiles, multi-device sync,
-              and data persistence all require a live Supabase project.
-            </p>
+            <Button
+              variant="danger"
+              size="sm"
+              fullWidth
+              onClick={() => signOut()}
+            >
+              Sign Out
+            </Button>
           </Card>
 
           <Card>

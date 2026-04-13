@@ -8,6 +8,7 @@ import {
   ChevronRight, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 const NAV_GROUPS = [
   {
@@ -42,6 +43,11 @@ const NAV_GROUPS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'User';
+  const displayEmail = user?.email ?? '';
+  const initial = (displayName[0] ?? 'U').toUpperCase();
 
   return (
     <aside className="hidden lg:flex flex-col w-60 min-h-screen bg-surface-1 border-r border-zinc-800 fixed left-0 top-0 bottom-0 z-30">
@@ -54,12 +60,6 @@ export function Sidebar() {
           <span className="font-bold text-zinc-100 text-sm tracking-tight">CardVault</span>
           <span className="block text-[10px] text-zinc-600 -mt-0.5">Seller CRM</span>
         </div>
-      </div>
-
-      {/* Demo badge */}
-      <div className="mx-3 mt-3 px-3 py-2 bg-brand-500/10 border border-brand-500/20 rounded-xl">
-        <p className="text-[11px] text-brand-400 font-medium">Demo Mode</p>
-        <p className="text-[10px] text-zinc-600">Connect Supabase to go live</p>
       </div>
 
       {/* Navigation */}
@@ -97,15 +97,17 @@ export function Sidebar() {
 
       {/* Bottom user area */}
       <div className="p-3 border-t border-zinc-800">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer">
-          <div className="w-7 h-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400">
-            D
+        <Link href="/settings">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer">
+            <div className="w-7 h-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400">
+              {initial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-zinc-300 truncate">{displayName}</p>
+              <p className="text-[10px] text-zinc-600 truncate">{displayEmail}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-zinc-300 truncate">Demo Seller</p>
-            <p className="text-[10px] text-zinc-600 truncate">demo@cardvault.io</p>
-          </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

@@ -1,35 +1,43 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Edit2, Trash2, TrendingUp, TrendingDown, Package, Star, MapPin, CalendarDays, ShoppingBag } from 'lucide-react';
-import { useAppStore } from '@/stores/appStore';
+import { useInventoryItem, useDeleteInventoryItem, useMarkAsSold } from '@/hooks/useInventory';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/Modal';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { EmptyState, CardSkeleton } from '@/components/ui/EmptyState';
 import { cn, formatCurrency, formatPercent, formatDate, conditionBadgeClass, statusBadgeClass, statusLabel, profitClass } from '@/lib/utils';
 
-export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function CardDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const router = useRouter();
-  const { inventory, deleteInventoryItem, markAsSold } = useAppStore();
+  const { data: item, isLoading, error } = useInventoryItem(id);
+  const { mutate: deleteItem, isPending: isDeleting } = useDeleteInventoryItem();
+  const { mutate: markAsSold, isPending: isMarkingSold } = useMarkAsSold();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const item = inventory.find(i => i.id === id);
+  if (isLoading) {
+    return (
+      <div className="page-container space-y-4">
+        <CardSkeleton />
+        <CardSkeleton />
+      </div>
+    );
+  }
 
-  if (!item) {
+  if (error || !item) {
     return (
       <div className="page-container">
         <EmptyState
           icon="🔍"
           title="Card not found"
-          description="This card may have been deleted."
+          description="This card may have been deleted or doesn't exist."
           action={{ label: 'Back to Inventory', onClick: () => router.push('/inventory') }}
         />
       </div>
@@ -41,18 +49,30 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const isProfit = unrealizedProfit > 0;
   const TrendIcon = isProfit ? TrendingUp : TrendingDown;
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    await new Promise(r => setTimeout(r, 400));
-    deleteInventoryItem(item.id);
-    toast.success('Card deleted');
-    router.push('/inventory');
+  const handleDelete = () => {
+    deleteItem(item.id, {
+      onSuccess: (result) => {
+        if (result.success) {
+          toast.success('Card deleted');
+          router.push('/inventory');
+        } else {
+          toast.error(result.error ?? 'Failed to delete card');
+        }
+      },
+    });
   };
 
   const handleMarkSold = () => {
-    markAsSold(item.id);
-    toast.success('Marked as sold. Log the full sale in Sold Log.');
-    router.push('/sold');
+    markAsSold(item.id, {
+      onSuccess: (result) => {
+        if (result.success) {
+          toast.success('Marked as sold. Log the full sale in Sold Log.');
+          router.push('/sold');
+        } else {
+          toast.error(result.error ?? 'Failed to mark as sold');
+        }
+      },
+    });
   };
 
   return (
@@ -70,7 +90,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
               <Edit2 className="w-4 h-4" />
             </Button>
           </Link>
-          <Button variant="danger" size="icon" onClick={() => setShowDeleteConfirm(true)}>
+          <Button variant="danger" size="icon" onClick={() => setShowDeleteConfirm(true)} disabled={isDeleting}>
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
@@ -208,7 +228,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           <Link href="/pricing" className="flex-1">
             <Button variant="secondary" fullWidth>Check Pricing</Button>
           </Link>
-          <Button variant="primary" className="flex-1" onClick={handleMarkSold}>
+          <Button variant="primary" className="flex-1" onClick={handleMarkSold} loading={isMarkingSold}>
             Record Sale
           </Button>
         </div>

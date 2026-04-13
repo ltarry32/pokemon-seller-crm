@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { Package, Star, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn, formatCurrency, formatPercent, conditionBadgeClass, statusBadgeClass, statusLabel, profitClass } from '@/lib/utils';
-import type { InventoryItem } from '@/types';
+import type { InventoryItemRow } from '@/lib/supabase/database.types';
 
 interface InventoryCardProps {
-  item: InventoryItem;
+  item: InventoryItemRow;
   compact?: boolean;
 }
 
@@ -113,7 +113,7 @@ export function InventoryCard({ item, compact = false }: InventoryCardProps) {
                   {unrealizedProfit >= 0 ? '+' : ''}{formatCurrency(unrealizedProfit)}
                 </p>
               </div>
-              {item.list_price && (
+              {item.list_price != null && (
                 <>
                   <div className="w-px h-6 bg-zinc-800" />
                   <div>
