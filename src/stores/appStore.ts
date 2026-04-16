@@ -12,7 +12,7 @@ import type { InventoryFilters, SoldLogFilters } from '@/types';
 
 const DEFAULT_INV_FILTERS: InventoryFilters = {
   search:    '',
-  status:    'all',
+  status:    'active',   // hides sold cards by default; use "Sold" filter to see them
   is_graded: null,
   rarity:    'all',
   condition: 'all',

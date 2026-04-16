@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/layout/Header'
 import { CardSkeleton, StatSkeleton } from '@/components/ui/EmptyState'
 import {
   TrendingUp, Package, ShoppingBag, DollarSign,
-  ScanLine, Calculator, Plus, ArrowRight,
+  ScanLine, Calculator, Plus, ArrowRight, Layers,
 } from 'lucide-react'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import type { InventoryItemRow, SoldTransactionRow } from '@/lib/supabase/database.types'
@@ -65,6 +65,9 @@ export default function DashboardPage() {
 
   const recentSales = transactions.slice(0, 3)
 
+  const isLoading = invLoading || salesLoading
+  const isEmpty   = !isLoading && inventory.length === 0 && transactions.length === 0
+
   return (
     <div className="page-container space-y-6 animate-fade-in">
       <PageHeader
@@ -77,12 +80,30 @@ export default function DashboardPage() {
         }
       />
 
+      {/* First-time user welcome state */}
+      {isEmpty && (
+        <div className="bg-surface-1 border border-zinc-800 rounded-2xl p-6 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-brand-500/15 flex items-center justify-center mx-auto">
+            <Layers className="w-6 h-6 text-brand-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-zinc-200">Welcome to your CRM</p>
+            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+              Add your first card to start tracking inventory value, profit, and sales history.
+            </p>
+          </div>
+          <Link href="/inventory/add">
+            <Button size="sm" className="mt-1">Add Your First Card</Button>
+          </Link>
+        </div>
+      )}
+
       {/* KPI Grid */}
-      {invLoading || salesLoading ? (
+      {isLoading ? (
         <div className="grid grid-cols-2 gap-3">
           {Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)}
         </div>
-      ) : (
+      ) : !isEmpty && (
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             label="Portfolio Value"
@@ -118,7 +139,7 @@ export default function DashboardPage() {
       )}
 
       {/* Profit trend chart */}
-      {!salesLoading && monthlyData.length > 0 && (
+      {!isLoading && monthlyData.length > 0 && (
         <div className="bg-surface-1 border border-zinc-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -164,7 +185,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Top inventory */}
-      {!invLoading && topItems.length > 0 && (
+      {!isLoading && topItems.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-zinc-300">Top Holdings</h3>
@@ -179,14 +200,14 @@ export default function DashboardPage() {
       )}
 
       {/* Skeleton while loading */}
-      {invLoading && (
+      {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
       )}
 
       {/* Recent sales */}
-      {!salesLoading && recentSales.length > 0 && (
+      {!isLoading && recentSales.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-zinc-300">Recent Sales</h3>

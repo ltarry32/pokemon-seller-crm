@@ -2,10 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Search } from 'lucide-react'
 import { useCreateInventoryItem } from '@/hooks/useInventory'
 import { Input, Select, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { CardImagePicker } from '@/components/inventory/CardImagePicker'
+import type { PickedCard } from '@/components/inventory/CardImagePicker'
 import type { InventoryItemInput } from '@/lib/validations'
 import type { CardCondition, CardLanguage, CardRarity, GradingCompany, ItemStatus } from '@/types'
 
@@ -31,7 +34,8 @@ export function AddCardForm({ prefill, onSuccess }: AddCardFormProps) {
 
   // Managed separately from the text form fields because it is
   // set asynchronously (upload fires on file selection, not submit).
-  const [imageUrl, setImageUrl] = useState<string | null>(prefill?.image_url ?? null)
+  const [imageUrl,   setImageUrl]   = useState<string | null>(prefill?.image_url ?? null)
+  const [showPicker, setShowPicker] = useState(false)
 
   const [form, setForm] = useState({
     card_name:        prefill?.card_name        ?? '',
@@ -55,6 +59,18 @@ export function AddCardForm({ prefill, onSuccess }: AddCardFormProps) {
   })
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
+
+  // Called when the user selects a card in the picker.
+  // Always sets the image; fills in other fields only if they are blank
+  // so we never overwrite something the user deliberately typed.
+  const handlePickerSelect = (picked: PickedCard) => {
+    setImageUrl(picked.image_url)
+    if (!form.card_number) set('card_number', picked.card_number)
+    if (!form.set_name)    set('set_name',    picked.set_name)
+    // Rarity: auto-fill only when still at the arbitrary default
+    if (picked.rarity && form.rarity === 'Ultra Rare') set('rarity', picked.rarity)
+    setShowPicker(false)
+  }
 
   const set = (key: string, value: unknown) => {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -111,6 +127,27 @@ export function AddCardForm({ prefill, onSuccess }: AddCardFormProps) {
       <section>
         <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Card Image</h3>
         <ImageUpload currentUrl={imageUrl} onUrlChange={setImageUrl} />
+
+        {/* Official image search — only shown once a card name is entered */}
+        {form.card_name.trim() && (
+          <button
+            type="button"
+            onClick={() => setShowPicker(true)}
+            className="mt-2.5 flex items-center gap-1.5 text-xs text-zinc-500 hover:text-brand-400 transition-colors"
+          >
+            <Search className="w-3 h-3" />
+            {imageUrl ? 'Replace with official card image' : 'Search official card images'}
+          </button>
+        )}
+
+        <CardImagePicker
+          isOpen={showPicker}
+          onClose={() => setShowPicker(false)}
+          onSelect={handlePickerSelect}
+          cardName={form.card_name}
+          cardNumber={form.card_number || undefined}
+          setName={form.set_name       || undefined}
+        />
       </section>
 
       {/* Card Identity */}

@@ -40,16 +40,14 @@ export default function ScanPage() {
         subtitle="Use camera or search to identify a card"
       />
 
-      {/* Info tip */}
-      <Card className="mb-4 bg-blue-500/5 border-blue-500/20">
-        <div className="flex gap-3">
-          <span className="text-xl">💡</span>
+      {/* Camera notice */}
+      <Card className="mb-4 bg-zinc-800/50 border-zinc-700/60">
+        <div className="flex gap-3 items-start">
+          <span className="text-lg mt-0.5">📷</span>
           <div>
-            <p className="text-sm font-medium text-blue-300 mb-0.5">Demo Scanner</p>
-            <p className="text-xs text-zinc-500">
-              The camera scanner flow is mocked. Real card recognition can be connected via
-              Google Vision API, Pokémon TCG API, or a custom ML model. See{' '}
-              <code className="text-brand-400">ScannerView.tsx</code> for integration points.
+            <p className="text-sm font-medium text-zinc-300 mb-0.5">Camera recognition coming soon</p>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Tap a result below to search manually, or use the scanner to pull up a card and add it directly to your inventory.
             </p>
           </div>
         </div>

@@ -4,13 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Search } from 'lucide-react'
 import { useInventoryItem, useUpdateInventoryItem } from '@/hooks/useInventory'
 import { Input, Select, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { EmptyState, CardSkeleton } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/layout/Header'
+import { CardImagePicker } from '@/components/inventory/CardImagePicker'
+import type { PickedCard } from '@/components/inventory/CardImagePicker'
 import type { InventoryItemUpdateInput } from '@/lib/validations'
 import type { InventoryItemRow } from '@/lib/supabase/database.types'
 import type { CardCondition, CardLanguage, CardRarity, GradingCompany, ItemStatus } from '@/types'
@@ -59,6 +61,19 @@ function EditCardForm({ item }: EditFormProps) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
   // Managed outside the main form state because the upload is async.
   const [imageUrl, setImageUrl] = useState<string | null>(item.image_url ?? null)
+
+  const [showPicker, setShowPicker] = useState(false)
+
+  // Called when the user picks a card from the picker.
+  // Always sets the image; fills in set/number only when blank
+  // (the user's existing typed values are intentional and never overwritten).
+  // Rarity is deliberately left untouched on edit.
+  const handlePickerSelect = (picked: PickedCard) => {
+    setImageUrl(picked.image_url)
+    if (!form.card_number) set('card_number', picked.card_number)
+    if (!form.set_name)    set('set_name',    picked.set_name)
+    setShowPicker(false)
+  }
 
   const set = (key: string, value: unknown) => {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -112,9 +127,26 @@ function EditCardForm({ item }: EditFormProps) {
       {/* Card Image */}
       <section>
         <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Card Image</h3>
-        <ImageUpload
-          currentUrl={imageUrl}
-          onUrlChange={setImageUrl}
+        <ImageUpload currentUrl={imageUrl} onUrlChange={setImageUrl} />
+
+        {form.card_name.trim() && (
+          <button
+            type="button"
+            onClick={() => setShowPicker(true)}
+            className="mt-2.5 flex items-center gap-1.5 text-xs text-zinc-500 hover:text-brand-400 transition-colors"
+          >
+            <Search className="w-3 h-3" />
+            {imageUrl ? 'Replace with official card image' : 'Search official card images'}
+          </button>
+        )}
+
+        <CardImagePicker
+          isOpen={showPicker}
+          onClose={() => setShowPicker(false)}
+          onSelect={handlePickerSelect}
+          cardName={form.card_name}
+          cardNumber={form.card_number || undefined}
+          setName={form.set_name       || undefined}
         />
       </section>
 

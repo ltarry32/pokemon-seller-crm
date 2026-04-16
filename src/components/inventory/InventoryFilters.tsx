@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils';
 export function InventoryFilters() {
   const { inventoryFilters, setInventoryFilters, resetInventoryFilters } = useAppStore();
 
+  // 'active' is the default — it is not considered an active filter
   const hasActiveFilters =
     inventoryFilters.search !== '' ||
-    inventoryFilters.status !== 'all' ||
+    (inventoryFilters.status !== 'active' && inventoryFilters.status !== 'all') ||
     inventoryFilters.is_graded !== null ||
     inventoryFilters.condition !== 'all' ||
     inventoryFilters.sort !== 'newest';
@@ -41,7 +42,8 @@ export function InventoryFilters() {
           onChange={e => setInventoryFilters({ status: e.target.value as InventoryFilters['status'] })}
           className="flex-shrink-0 h-9 px-3 rounded-xl bg-surface-2 border border-zinc-700 text-sm text-zinc-300 focus:outline-none focus:border-brand-500"
         >
-          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="all">All (incl. Sold)</option>
           <option value="in_inventory">In Stock</option>
           <option value="listed">Listed</option>
           <option value="pending">Pending</option>

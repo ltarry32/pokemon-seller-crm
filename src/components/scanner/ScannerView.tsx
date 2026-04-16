@@ -5,14 +5,10 @@ import { ScanLine, Camera, Keyboard, Loader2, CheckCircle, AlertCircle, Plus } f
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn, formatCurrency } from '@/lib/utils';
-import type { ScanStep, ScanResult } from '@/types';
+import { searchPokemonCard, mapRarity } from '@/lib/pokemonTcgApi';
+import type { ScanStep, ScanResult, CardRarity } from '@/types';
 
-// ─── Mock card recognition ────────────────────────────────────
-// TODO: Connect to real OCR/AI service:
-// Option A: Google Vision API — label detection + web search
-// Option B: Pokémon TCG API — match by barcode/set code
-// Option C: Custom ML model trained on card images
-
+// ─── Mock results for camera scan (camera OCR not yet implemented) ──
 const MOCK_SCAN_RESULTS: ScanResult[] = [
   { card_name: 'Charizard ex', set_name: 'Obsidian Flames', card_number: '125/197', rarity: 'Ultra Rare', image_url: 'https://images.pokemontcg.io/sv3/125_hires.png', confidence: 0.96, price_estimate: 42.50 },
   { card_name: 'Pikachu ex', set_name: 'Paldean Fates', card_number: '30/91', rarity: 'Ultra Rare', image_url: null, confidence: 0.91, price_estimate: 28.00 },
@@ -29,6 +25,7 @@ export function ScannerView({ onCardConfirmed, onAddToInventory }: ScannerViewPr
   const [mode, setMode] = useState<'camera' | 'manual'>('camera');
   const [result, setResult] = useState<ScanResult | null>(null);
   const [manualSearch, setManualSearch] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Simulate camera scan
@@ -56,15 +53,29 @@ export function ScannerView({ onCardConfirmed, onAddToInventory }: ScannerViewPr
     }
   };
 
-  // Simulate manual lookup
+  // Real card lookup via Pokémon TCG API
   const handleManualSearch = async () => {
     if (!manualSearch.trim()) return;
+    setSearchError(null);
     setStep('processing');
-    await new Promise(r => setTimeout(r, 1000));
 
-    const mockResult = MOCK_SCAN_RESULTS[Math.floor(Math.random() * MOCK_SCAN_RESULTS.length)];
-    setResult({ ...mockResult, card_name: manualSearch.trim() || mockResult.card_name });
-    setStep('result');
+    const card = await searchPokemonCard({ card_name: manualSearch.trim() });
+
+    if (card) {
+      setResult({
+        card_name:     card.name,
+        set_name:      card.set.name,
+        card_number:   card.number,
+        rarity:        (mapRarity(card.rarity) as CardRarity | null),
+        image_url:     card.images.large,
+        confidence:    0.99,
+        price_estimate: null,
+      });
+      setStep('result');
+    } else {
+      setStep('ready');
+      setSearchError('No card found. Check the spelling or try a shorter name.');
+    }
   };
 
   const handleConfirm = () => {
@@ -85,6 +96,7 @@ export function ScannerView({ onCardConfirmed, onAddToInventory }: ScannerViewPr
     setStep('ready');
     setResult(null);
     setManualSearch('');
+    setSearchError(null);
   };
 
   return (
@@ -167,11 +179,16 @@ export function ScannerView({ onCardConfirmed, onAddToInventory }: ScannerViewPr
       {step === 'ready' && mode === 'manual' && (
         <div className="w-full space-y-3">
           <Input
-            placeholder="Search card name, set, number..."
+            placeholder="Search by card name…"
             value={manualSearch}
-            onChange={e => setManualSearch(e.target.value)}
+            onChange={e => { setManualSearch(e.target.value); setSearchError(null); }}
             onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
           />
+          {searchError && (
+            <p className="text-xs text-red-400 flex items-center gap-1">
+              <span>⚠</span> {searchError}
+            </p>
+          )}
           <Button fullWidth onClick={handleManualSearch} disabled={!manualSearch.trim()}>
             Search Card
           </Button>

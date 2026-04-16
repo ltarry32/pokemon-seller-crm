@@ -226,7 +226,8 @@ export type SortOption = 'newest' | 'oldest' | 'highest_value' | 'highest_profit
 
 export interface InventoryFilters {
   search: string;
-  status: ItemStatus | 'all';
+  /** 'active' = all statuses except sold (the default view) */
+  status: ItemStatus | 'all' | 'active';
   is_graded: boolean | null;
   rarity: CardRarity | 'all';
   condition: CardCondition | 'all';

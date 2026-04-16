@@ -28,7 +28,8 @@ function applyFilters(items: InventoryItemRow[], filters: IFilters): InventoryIt
     )
   }
 
-  if (filters.status !== 'all')     result = result.filter(i => i.status === filters.status)
+  if (filters.status === 'active')   result = result.filter(i => i.status !== 'sold')
+  else if (filters.status !== 'all') result = result.filter(i => i.status === filters.status)
   if (filters.is_graded !== null)    result = result.filter(i => i.is_graded === filters.is_graded)
   if (filters.condition !== 'all')   result = result.filter(i => i.condition === filters.condition)
   if (filters.rarity !== 'all')      result = result.filter(i => i.rarity === filters.rarity)
@@ -60,7 +61,7 @@ export default function InventoryPage() {
     <div className="page-container space-y-4 animate-fade-in">
       <PageHeader
         title="Inventory"
-        subtitle={isLoading ? 'Loading...' : `${filtered.length} card${filtered.length !== 1 ? 's' : ''}`}
+        subtitle={isLoading ? 'Loading…' : `${active.length} active · ${filtered.length} shown`}
         actions={
           <Link href="/inventory/add">
             <Button size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>Add Card</Button>
@@ -110,15 +111,23 @@ export default function InventoryPage() {
       {!isLoading && !error && filtered.length === 0 && (
         <EmptyState
           icon="🃏"
-          title={inventoryFilters.search ? 'No cards match your search' : 'No cards yet'}
+          title={
+            inventoryFilters.search
+              ? 'No cards match your search'
+              : inventoryFilters.status === 'sold'
+                ? 'No sold cards yet'
+                : 'No cards in inventory'
+          }
           description={
             inventoryFilters.search
-              ? 'Try different search terms or clear your filters.'
-              : 'Add your first card to start tracking your inventory.'
+              ? 'Try adjusting your search or clearing filters.'
+              : inventoryFilters.status === 'sold'
+                ? 'Cards will appear here once you mark them as sold.'
+                : 'Add your first card to start tracking your collection.'
           }
           action={
-            !inventoryFilters.search
-              ? { label: 'Add Your First Card', onClick: () => window.location.href = '/inventory/add' }
+            !inventoryFilters.search && inventoryFilters.status !== 'sold'
+              ? { label: 'Add Card', onClick: () => window.location.href = '/inventory/add' }
               : undefined
           }
         />

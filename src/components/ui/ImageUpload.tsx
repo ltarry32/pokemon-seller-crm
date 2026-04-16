@@ -7,7 +7,7 @@
 // form submit only needs to store the returned URL string.
 // =============================================================
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { ImageIcon, Loader2, X, RefreshCw } from 'lucide-react'
 import { uploadCardImage, deleteCardImage } from '@/lib/supabase/storage'
@@ -33,6 +33,15 @@ export function ImageUpload({ currentUrl, onUrlChange, className }: ImageUploadP
   const [error,      setError]      = useState<string | null>(null)
   const [dragging,   setDragging]   = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Sync whenever the parent changes currentUrl — covers both:
+  //   • picker selection (replacing an existing image)
+  //   • initial prefill from the DB on the edit page
+  // React bails out automatically if the value is the same as what's
+  // already in state, so this never causes an extra paint.
+  useEffect(() => {
+    setPreviewUrl(currentUrl ?? null)
+  }, [currentUrl])
 
   const handleFile = async (file: File) => {
     setError(null)

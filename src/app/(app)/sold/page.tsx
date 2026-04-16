@@ -116,9 +116,21 @@ export default function SoldPage() {
       {!isLoading && !error && filtered.length === 0 && (
         <EmptyState
           icon="🏷️"
-          title="No sales yet"
-          description="Record your first sale to start tracking profit and loss."
-          action={{ label: 'Log a Sale', onClick: () => setShowAddSale(true) }}
+          title={
+            soldLogFilters.search || soldLogFilters.platform !== 'all'
+              ? 'No results found'
+              : 'No sales recorded yet'
+          }
+          description={
+            soldLogFilters.search || soldLogFilters.platform !== 'all'
+              ? 'Try adjusting your search or platform filter.'
+              : 'Log your first completed sale to start tracking revenue and profit.'
+          }
+          action={
+            !soldLogFilters.search && soldLogFilters.platform === 'all'
+              ? { label: 'Log a Sale', onClick: () => setShowAddSale(true) }
+              : undefined
+          }
         />
       )}
 
