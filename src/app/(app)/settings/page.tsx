@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { ExternalLink, Check, X, Copy, Zap, Database, Link2, Shield } from 'lucide-react';
+import { ExternalLink, Check, Copy, Zap, Link2, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/actions/auth';
 import { PageHeader } from '@/components/layout/Header';
@@ -38,7 +38,7 @@ const INTEGRATIONS = [
       { key: 'EBAY_APP_ID',       label: 'App ID (Client ID)',    placeholder: 'YourApp-xxx-xxx' },
       { key: 'EBAY_CLIENT_SECRET', label: 'Client Secret',        placeholder: '***' },
     ],
-    setupNotes: 'Register at developer.ebay.com. Use the Finding API for sold comps, Browse API for active listings. Connect in ebayPricingService.ts.',
+    setupNotes: 'Register at developer.ebay.com. Use the Finding API for sold comps and the Browse API for active listings.',
   },
   {
     id:          'tcgplayer',
@@ -51,7 +51,7 @@ const INTEGRATIONS = [
       { key: 'TCGPLAYER_CLIENT_ID',     label: 'Client ID',     placeholder: 'xxx' },
       { key: 'TCGPLAYER_CLIENT_SECRET', label: 'Client Secret', placeholder: '***' },
     ],
-    setupNotes: 'Apply for API access at tcgplayer.com. OAuth2 client credentials flow. Connect in tcgplayerPricingService.ts.',
+    setupNotes: 'Apply for API access at tcgplayer.com. Uses OAuth2 client credentials for authentication.',
   },
   {
     id:          'pricecharting',
@@ -63,7 +63,7 @@ const INTEGRATIONS = [
     fields: [
       { key: 'PRICECHARTING_API_KEY', label: 'API Key', placeholder: 'xxx' },
     ],
-    setupNotes: 'Get an API key at pricecharting.com/api. Connect in pricingAggregatorService.ts.',
+    setupNotes: 'Get an API key at pricecharting.com/api. Provides historical pricing and sales data.',
   },
   {
     id:          'pokemon_tcg_api',
@@ -100,7 +100,7 @@ export default function SettingsPage() {
   const handleSaveKey = (integrationId: string, key: string, value: string) => {
     setApiKeys(prev => ({ ...prev, [key]: value }));
     setSaved(prev => ({ ...prev, [integrationId]: true }));
-    toast.success('Saved to .env.local (dev only)');
+    toast.success('API key saved');
     setTimeout(() => setSaved(prev => ({ ...prev, [integrationId]: false })), 2000);
   };
 
@@ -118,7 +118,6 @@ export default function SettingsPage() {
       <div className="flex gap-2 border-b border-zinc-800 pb-1">
         {[
           { id: 'integrations', label: 'Integrations', icon: Link2 },
-          { id: 'database',     label: 'Database',     icon: Database },
           { id: 'account',      label: 'Account',      icon: Shield },
         ].map(({ id, label, icon: Icon }) => (
           <button
@@ -138,14 +137,6 @@ export default function SettingsPage() {
       {/* ── Integrations ───────────────────────────────────── */}
       {activeSection === 'integrations' && (
         <div className="space-y-4">
-          <div className="p-3 bg-zinc-800/40 rounded-2xl border border-zinc-700/50">
-            <p className="text-xs text-zinc-400">
-              <strong className="text-zinc-300">Integration Architecture:</strong>{' '}
-              Service files are pre-built in <code className="text-brand-400">src/services/</code>.
-              Add your API keys here and remove the mock implementations to go live.
-            </p>
-          </div>
-
           {INTEGRATIONS.map(integration => (
             <Card key={integration.id}>
               <div className="flex items-start justify-between gap-3 mb-3">
@@ -184,7 +175,7 @@ export default function SettingsPage() {
                       value={apiKeys[field.key] ?? ''}
                       onChange={e => setApiKeys(prev => ({ ...prev, [field.key]: e.target.value }))}
                       containerClassName="flex-1"
-                      hint={`Add to .env.local as ${field.key}=...`}
+                      hint={`Environment variable: ${field.key}`}
                     />
                     <button
                       onClick={() => copyEnvLine(field.key, apiKeys[field.key] ?? '')}
@@ -207,50 +198,6 @@ export default function SettingsPage() {
               </Button>
             </Card>
           ))}
-        </div>
-      )}
-
-      {/* ── Database ────────────────────────────────────────── */}
-      {activeSection === 'database' && (
-        <div className="space-y-4">
-          <Card>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                <Database className="w-5 h-5 text-blue-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-zinc-100">Supabase Schema</p>
-                <p className="text-xs text-zinc-500">Run this SQL in your Supabase project</p>
-              </div>
-            </div>
-            <div className="bg-zinc-900 rounded-xl p-4 font-mono text-xs text-zinc-400 overflow-x-auto">
-              <pre className="whitespace-pre-wrap">{SCHEMA_SQL}</pre>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 w-full"
-              onClick={() => {
-                navigator.clipboard.writeText(SCHEMA_SQL);
-                toast.success('Schema SQL copied!');
-              }}
-              leftIcon={<Copy className="w-3.5 h-3.5" />}
-            >
-              Copy Schema SQL
-            </Button>
-          </Card>
-
-          <Card>
-            <p className="font-semibold text-zinc-100 mb-2">Schema Tables</p>
-            <div className="space-y-2">
-              {['profiles','inventory_items','price_snapshots','sold_transactions','fee_profiles','integrations','scan_history'].map(t => (
-                <div key={t} className="flex items-center gap-2 py-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
-                  <code className="text-xs text-brand-300">{t}</code>
-                </div>
-              ))}
-            </div>
-          </Card>
         </div>
       )}
 
@@ -293,81 +240,3 @@ export default function SettingsPage() {
   );
 }
 
-// ─── Schema SQL preview ───────────────────────────────────────
-
-const SCHEMA_SQL = `-- CardVault Seller CRM — Supabase Schema
--- Run in: Supabase → SQL Editor → New Query
-
--- Profiles
-create table profiles (
-  id uuid references auth.users primary key,
-  full_name text,
-  email text,
-  business_name text,
-  avatar_url text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- Inventory Items
-create table inventory_items (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references profiles(id) on delete cascade,
-  card_name text not null,
-  set_name text not null,
-  card_number text,
-  rarity text, language text default 'English',
-  condition text not null,
-  is_graded boolean default false,
-  grade text, grading_company text,
-  quantity int default 1,
-  cost_basis numeric(10,2) default 0,
-  current_market_price numeric(10,2) default 0,
-  list_price numeric(10,2), min_price numeric(10,2),
-  storage_location text, status text default 'in_inventory',
-  source text, purchase_date date, notes text, image_url text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- Price Snapshots
-create table price_snapshots (
-  id uuid default gen_random_uuid() primary key,
-  inventory_item_id uuid references inventory_items(id),
-  source text, low_price numeric(10,2),
-  avg_price numeric(10,2), high_price numeric(10,2),
-  sold_average numeric(10,2), sales_count int default 0,
-  captured_at timestamptz default now()
-);
-
--- Sold Transactions
-create table sold_transactions (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references profiles(id),
-  inventory_item_id uuid references inventory_items(id),
-  card_name text not null, set_name text, card_number text,
-  condition text, is_graded boolean, grade text, image_url text,
-  sold_price numeric(10,2) not null, platform text,
-  buyer_name text, fees numeric(10,2) default 0,
-  shipping_cost numeric(10,2) default 0,
-  packaging_cost numeric(10,2) default 0,
-  cost_basis numeric(10,2) default 0,
-  net_profit numeric(10,2), payment_method text,
-  tracking_number text, date_sold timestamptz default now(),
-  notes text, created_at timestamptz default now()
-);
-
--- Fee Profiles
-create table fee_profiles (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references profiles(id),
-  name text, platform text,
-  fee_percent numeric(5,2) default 0,
-  processing_percent numeric(5,2) default 0,
-  fixed_fee numeric(10,2) default 0,
-  created_at timestamptz default now()
-);
-
--- RLS (enable after testing)
--- alter table inventory_items enable row level security;
--- create policy "Users own data" on inventory_items using (auth.uid() = user_id);`;

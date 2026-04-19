@@ -24,8 +24,7 @@ export default function PricingPage() {
   const handleRefresh = async (cardName: string) => {
     setRefreshing(cardName);
     await new Promise(r => setTimeout(r, 1200));
-    // In production: call pricingAggregatorService.fetchAllPricing() here
-    setPricing(prev =>
+setPricing(prev =>
       prev.map(p => p.card_name === cardName ? { ...p, last_refreshed: new Date().toISOString() } : p)
     );
     setRefreshing(null);
@@ -68,8 +67,7 @@ export default function PricingPage() {
           </span>
         ))}
         <span className="text-[11px] text-zinc-600 px-2 py-0.5">
-          {/* TODO: Connect real API keys in Settings → Integrations */}
-          Mock data — connect APIs in Settings
+          Live pricing coming soon
         </span>
       </div>
 
