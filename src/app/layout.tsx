@@ -3,7 +3,7 @@ import './globals.css'
 import { QueryProvider } from '@/providers/QueryProvider'
 
 export const metadata: Metadata = {
-  title: 'CardVault — Pokémon Seller CRM',
+  title: 'CollectorVault — Pokémon Seller CRM',
   description: 'Professional tool for Pokémon card sellers. Track inventory, monitor pricing, calculate fees, and analyze profit.',
   manifest: '/manifest.json',
   icons: {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable:         true,
-    title:           'CardVault',
+    title:           'CollectorVault',
     statusBarStyle:  'black-translucent',
   },
 }

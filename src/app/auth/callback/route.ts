@@ -12,8 +12,12 @@ import type { Database } from '@/lib/supabase/database.types'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code        = requestUrl.searchParams.get('code')
-  const next        = requestUrl.searchParams.get('next') ?? '/dashboard'
   const origin      = requestUrl.origin
+
+  // Validate `next` is a safe relative path — prevents open redirect attacks.
+  // Reject anything that doesn't start with '/' or starts with '//' (protocol-relative).
+  const rawNext = requestUrl.searchParams.get('next') ?? ''
+  const next    = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/dashboard'
 
   if (code) {
     const cookieStore = cookies()

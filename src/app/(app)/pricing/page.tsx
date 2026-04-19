@@ -16,10 +16,15 @@ export default function PricingPage() {
   const [refreshing, setRefreshing]   = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState(false);
 
-  const filtered = pricing.filter(p =>
-    !search || p.card_name.toLowerCase().includes(search.toLowerCase()) ||
-    p.set_name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = pricing.filter(p => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      p.card_name.toLowerCase().includes(q) ||
+      p.set_name.toLowerCase().includes(q) ||
+      (p.card_number ?? '').toLowerCase().includes(q)
+    );
+  });
 
   const handleRefresh = async (cardName: string) => {
     setRefreshing(cardName);
@@ -40,8 +45,8 @@ setPricing(prev =>
   return (
     <div className="page-container space-y-5 animate-fade-in">
       <PageHeader
-        title="Live Pricing"
-        subtitle="Real-time comps from multiple sources"
+        title="Market Pricing"
+        subtitle="Pricing estimates based on recent market data. Live integrations with eBay and TCGPlayer coming soon."
         actions={
           <Button
             variant="secondary"
@@ -50,7 +55,7 @@ setPricing(prev =>
             loading={refreshingAll}
             leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
           >
-            Refresh All
+            Refresh Estimates
           </Button>
         }
       />
@@ -75,7 +80,7 @@ setPricing(prev =>
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Flame className="w-4 h-4 text-brand-400" />
-          <h3 className="text-sm font-semibold text-zinc-300">Trending Now</h3>
+          <h3 className="text-sm font-semibold text-zinc-300">Trending Cards</h3>
         </div>
         <div className="space-y-2">
           {MOCK_TRENDING_CARDS.slice(0, 4).map(card => (
@@ -86,7 +91,7 @@ setPricing(prev =>
 
       {/* Search */}
       <Input
-        placeholder="Search by card name or set..."
+        placeholder="Search by card name, set, or number..."
         value={search}
         onChange={e => setSearch(e.target.value)}
       />
@@ -108,7 +113,7 @@ setPricing(prev =>
 
       {/* Integration CTA */}
       <div className="bg-surface-1 border border-dashed border-zinc-700 rounded-2xl p-5 text-center">
-        <p className="text-sm font-medium text-zinc-300 mb-1">🔌 Connect Live APIs</p>
+        <p className="text-sm font-medium text-zinc-300 mb-1">🔌 Connect Pricing APIs</p>
         <p className="text-xs text-zinc-500 mb-3">
           eBay, TCGPlayer, and PriceCharting integration points are ready.
           Add your API keys in Settings → Integrations.
@@ -117,6 +122,11 @@ setPricing(prev =>
           Go to Settings →
         </a>
       </div>
+
+      {/* Disclaimer */}
+      <p className="text-center text-[11px] text-zinc-600 pb-2">
+        Prices shown are estimates and may vary from live marketplace listings.
+      </p>
     </div>
   );
 }

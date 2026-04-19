@@ -29,7 +29,7 @@ const NAV_GROUPS = [
     label: 'Finance',
     items: [
       { href: '/analytics',  label: 'Analytics',   icon: BarChart3 },
-      { href: '/pricing',    label: 'Live Pricing',icon: TrendingUp },
+      { href: '/pricing',    label: 'Market Pricing', icon: TrendingUp },
       { href: '/calculator', label: 'Fee Calc',    icon: Calculator },
     ],
   },
@@ -57,7 +57,7 @@ export function Sidebar() {
           <Zap className="w-4 h-4 text-white" />
         </div>
         <div>
-          <span className="font-bold text-zinc-100 text-sm tracking-tight">CardVault</span>
+          <span className="font-bold text-zinc-100 text-sm tracking-tight">CollectorVault</span>
           <span className="block text-[10px] text-zinc-600 -mt-0.5">Seller CRM</span>
         </div>
       </div>

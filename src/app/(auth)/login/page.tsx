@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { AuthForm } from '@/components/auth/AuthForm'
 
 export const metadata: Metadata = {
-  title: 'Sign In — CardVault',
+  title: 'Sign In — CollectorVault',
 }
 
 export default function LoginPage() {

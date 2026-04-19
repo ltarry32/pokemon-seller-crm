@@ -14,7 +14,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Routes that don't require authentication
-const PUBLIC_ROUTES = ['/login', '/register', '/auth/callback']
+const PUBLIC_ROUTES = ['/login', '/register', '/auth/callback', '/privacy', '/terms', '/contact']
 
 // Routes that authenticated users should NOT see (redirect to dashboard)
 const AUTH_ROUTES = ['/login', '/register']

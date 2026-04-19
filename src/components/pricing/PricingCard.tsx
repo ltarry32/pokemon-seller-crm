@@ -34,7 +34,7 @@ export function PricingCard({ pricing, onRefresh, isRefreshing }: PricingCardPro
         <div className="flex items-center gap-2 ml-2">
           <div className="text-right">
             <p className="text-xl font-bold text-brand-400">{formatCurrency(pricing.best_price)}</p>
-            <p className="text-[10px] text-zinc-600">market avg</p>
+            <p className="text-[10px] text-zinc-600">Est. Market Value</p>
           </div>
           {onRefresh && (
             <Button variant="ghost" size="icon" onClick={onRefresh} loading={isRefreshing}>

@@ -9,7 +9,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle?: string }> = {
   '/dashboard':  { title: 'Dashboard',     subtitle: 'Your business at a glance' },
   '/scan':       { title: 'Scan Card',     subtitle: 'Identify & add cards' },
   '/inventory':  { title: 'Inventory',     subtitle: 'Manage your collection' },
-  '/pricing':    { title: 'Live Pricing',  subtitle: 'Real-time market comps' },
+  '/pricing':    { title: 'Market Pricing', subtitle: 'Pricing estimates from market data' },
   '/sold':       { title: 'Sold Log',      subtitle: 'Completed sales & profits' },
   '/calculator': { title: 'Fee Calculator',subtitle: 'Calculate net profit' },
   '/analytics':  { title: 'Analytics',     subtitle: 'Profit & loss insights' },
@@ -24,7 +24,7 @@ function getPageMeta(pathname: string) {
   const prefixMatch = Object.keys(PAGE_TITLES).find(k => pathname.startsWith(k + '/'));
   if (prefixMatch) return PAGE_TITLES[prefixMatch];
 
-  return { title: 'CardVault', subtitle: undefined };
+  return { title: 'CollectorVault', subtitle: undefined };
 }
 
 export function Header() {

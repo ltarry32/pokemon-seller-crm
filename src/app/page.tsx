@@ -20,7 +20,7 @@ export default async function RootPage() {
             <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center">
               <Package className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-zinc-100 text-lg tracking-tight">CardVault</span>
+            <span className="font-bold text-zinc-100 text-lg tracking-tight">CollectorVault</span>
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -49,14 +49,12 @@ export default async function RootPage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-100 leading-tight tracking-tight mb-5">
-            Your Pokémon card business,
-            <br />
-            <span className="text-brand-400">finally under control</span>
+            Track your Pokémon card inventory, images, sales, and profit in one place.
           </h1>
 
           <p className="text-zinc-400 text-lg max-w-xl mx-auto leading-relaxed mb-8">
-            Track inventory, monitor profit & loss, log every sale, and price cards with
-            live market data — all in one mobile-first app.
+            CollectorVault helps collectors and sellers organize cards, log sales, view official card
+            images, and track portfolio performance with less manual work.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -64,17 +62,17 @@ export default async function RootPage() {
               href="/register"
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-base transition-all shadow-glow-orange hover:shadow-glow-orange active:scale-95"
             >
-              Start for free
+              Start Free
             </Link>
             <Link
               href="/login"
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-base transition-colors border border-zinc-700"
             >
-              Log in to my account
+              Log In
             </Link>
           </div>
 
-          <p className="text-xs text-zinc-600 mt-4">No credit card required · Free during early access</p>
+          <p className="text-xs text-zinc-600 mt-4">No credit card required. Start free with up to 25 cards.</p>
         </section>
 
         {/* ── Features ─────────────────────────────────────────── */}
@@ -87,28 +85,28 @@ export default async function RootPage() {
                 color: 'text-brand-400',
                 bg:   'bg-brand-500/10',
                 title: 'Inventory Tracking',
-                body:  'Add cards with official images from the Pokémon TCG database. Track condition, grade, quantity, cost basis, and storage location.',
+                body:  'Organize your collection with card details, images, condition, quantity, and cost basis.',
               },
               {
                 icon: TrendingUp,
                 color: 'text-profit',
                 bg:   'bg-profit/10',
                 title: 'P&L at a Glance',
-                body:  'See unrealized profit, ROI, and total portfolio value on your dashboard. Know instantly which cards are winners.',
+                body:  'See portfolio value, unrealized gains, profit, and revenue from one dashboard.',
               },
               {
                 icon: BarChart3,
                 color: 'text-info',
                 bg:   'bg-info/10',
                 title: 'Sales Analytics',
-                body:  'Log every sale with fees, shipping, and platform. Monthly revenue charts and profit breakdowns give you real business insight.',
+                body:  'Log completed sales with fees and shipping to track real profit over time.',
               },
               {
                 icon: Scan,
                 color: 'text-purple-400',
                 bg:   'bg-purple-500/10',
-                title: 'Quick Add Scanner',
-                body:  'Type a card name and instantly pull official card data and images. Add new cards to your inventory in seconds.',
+                title: 'Quick Card Entry',
+                body:  'Find official card images and details faster with built-in lookup tools.',
               },
             ].map(({ icon: Icon, color, bg, title, body }) => (
               <div key={title} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
@@ -126,7 +124,7 @@ export default async function RootPage() {
         <section className="max-w-5xl mx-auto px-5 pb-20">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-extrabold text-zinc-100 tracking-tight">Simple pricing</h2>
-            <p className="text-zinc-500 mt-2">Start free. Upgrade when you're ready.</p>
+            <p className="text-zinc-500 mt-2">Start free, then upgrade when you're ready to track more inventory.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -138,10 +136,11 @@ export default async function RootPage() {
               <p className="text-xs text-zinc-600 mb-6">Forever free</p>
               <ul className="space-y-2.5 flex-1 mb-6">
                 {[
-                  'Up to 100 inventory items',
-                  'P&L dashboard',
-                  'Sale logging',
+                  'Up to 25 inventory items',
+                  'Inventory tracking',
                   'Card image lookup',
+                  'Sales logging',
+                  'Basic dashboard',
                 ].map(f => (
                   <li key={f} className="flex items-start gap-2 text-sm text-zinc-400">
                     <Check className="w-4 h-4 text-profit shrink-0 mt-0.5" />
@@ -153,7 +152,7 @@ export default async function RootPage() {
                 href="/register"
                 className="block text-center py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm transition-colors border border-zinc-700"
               >
-                Get started free
+                Start Free
               </Link>
             </div>
 
@@ -173,7 +172,7 @@ export default async function RootPage() {
                 {[
                   'Unlimited inventory items',
                   'Everything in Free',
-                  'Live pricing (eBay, TCGPlayer)',
+                  'Live pricing',
                   'Advanced analytics',
                   'Fee calculator',
                   'CSV export',
@@ -188,7 +187,7 @@ export default async function RootPage() {
                 href="/register"
                 className="block text-center py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm transition-colors"
               >
-                Start Pro free trial
+                Upgrade to Pro
               </Link>
             </div>
 
@@ -196,15 +195,15 @@ export default async function RootPage() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col">
               <p className="text-sm font-semibold text-zinc-400 mb-1">Early Access</p>
               <p className="text-3xl font-extrabold text-zinc-100 mb-1">
-                Free<span className="text-base font-medium text-zinc-500"> now</span>
+                Free<span className="text-base font-medium text-zinc-500"> during beta</span>
               </p>
-              <p className="text-xs text-zinc-600 mb-6">Limited time offer</p>
+              <p className="text-xs text-zinc-600 mb-6">Get Pro free during beta</p>
               <ul className="space-y-2.5 flex-1 mb-6">
                 {[
                   'Full Pro access at no cost',
-                  'Locked-in discount on launch',
-                  'Early feature previews',
-                  'Direct feedback channel',
+                  'Early feature access',
+                  'Feedback channel',
+                  'Limited-time beta access',
                 ].map(f => (
                   <li key={f} className="flex items-start gap-2 text-sm text-zinc-400">
                     <Check className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
@@ -216,7 +215,7 @@ export default async function RootPage() {
                 href="/register"
                 className="block text-center py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm transition-colors border border-zinc-700"
               >
-                Join early access
+                Join Early Access
               </Link>
             </div>
 
@@ -227,21 +226,42 @@ export default async function RootPage() {
 
       {/* ── Footer ───────────────────────────────────────────────── */}
       <footer className="border-t border-zinc-800 py-8 px-5">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-brand-500 flex items-center justify-center">
-              <Package className="w-3 h-3 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-zinc-400">CardVault</span>
-          </div>
-          <p className="text-xs text-zinc-600">© {new Date().getFullYear()} CardVault. Built for Pokémon collectors.</p>
-          <div className="flex gap-4">
-            <Link href="/login"    className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Log In</Link>
-            <Link href="/register" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Sign Up</Link>
-          </div>
-        </div>
-      </footer>
-
+  <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+    <div className="flex items-center gap-2">
+      <div className="w-5 h-5 rounded-md bg-brand-500 flex items-center justify-center">
+        <Package className="w-3 h-3 text-white" />
+      </div>
+      <span className="text-sm font-semibold text-zinc-400">CollectorVault</span>
     </div>
-  );
+
+    <p className="text-xs text-zinc-600">
+      © {new Date().getFullYear()} CollectorVault. Built for Pokémon collectors and sellers.
+    </p>
+
+    <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <div className="flex gap-4">
+        <Link href="/login" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
+          Log In
+        </Link>
+        <Link href="/register" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
+          Sign Up
+        </Link>
+      </div>
+
+      <div className="flex gap-4 text-xs text-zinc-600">
+        <Link href="/privacy" className="hover:text-zinc-400">
+          Privacy
+        </Link>
+        <Link href="/terms" className="hover:text-zinc-400">
+          Terms
+        </Link>
+        <Link href="/contact" className="hover:text-zinc-400">
+          Contact
+        </Link>
+      </div>
+    </div>
+  </div>
+</footer>
+</div>
+)
 }

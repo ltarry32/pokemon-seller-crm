@@ -79,7 +79,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <div className="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center shadow-glow-orange mb-3">
             <Zap className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-100">CardVault</h1>
+          <h1 className="text-2xl font-bold text-zinc-100">CollectorVault</h1>
           <p className="text-sm text-zinc-500 mt-1">
             {mode === 'login' ? 'Sign in to your account' : 'Create your account'}
           </p>
