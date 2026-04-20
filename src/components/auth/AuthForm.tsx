@@ -60,10 +60,8 @@ export function AuthForm({ mode }: AuthFormProps) {
       return
     }
 
-    if (result.requiresEmailConfirmation) {
-      setSuccess('Check your email to confirm your account before signing in.')
-      return
-    }
+    setSuccess('Check your email to confirm your account before signing in.')
+return
 
     router.push(redirectTo)
     router.refresh()

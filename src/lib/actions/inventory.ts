@@ -47,13 +47,15 @@ export async function createInventoryItem(
     }
   }
 
-  const { data, error } = await supabase
-    .from('inventory_items')
-    .insert({
-      ...parsed.data,
-      user_id: user.id,              // Always injected server-side
-      updated_at: new Date().toISOString(),
-    })
+  const insertPayload = {
+  ...parsed.data,
+  user_id: user.id,
+  updated_at: new Date().toISOString(),
+}
+
+const { data, error } = await supabase
+  .from('inventory_items')
+  .insert([insertPayload] as any)
     .select()
     .single()
 
@@ -90,16 +92,18 @@ export async function updateInventoryItem(
   }
 
   // RLS will also block non-owners, but check explicitly for a better error msg
-  const { data, error } = await supabase
-    .from('inventory_items')
-    .update({
-      ...parsed.data,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .eq('user_id', user.id)  // Belt-and-suspenders: explicit user_id check
-    .select()
-    .single()
+  const updatePayload = {
+  ...parsed.data,
+  updated_at: new Date().toISOString(),
+}
+
+const { data, error } = await (supabase
+  .from('inventory_items') as any)
+  .update(updatePayload)
+  .eq('id', id)
+  .eq('user_id', user.id)
+  .select()
+  .single()
 
   if (error) {
     console.error('[updateInventoryItem]', error.message)

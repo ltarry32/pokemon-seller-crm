@@ -16,7 +16,11 @@ import type { SoldTransactionRow } from '@/lib/supabase/database.types'
 
 async function getAuthenticatedUser() {
   const supabase = createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
   if (error || !user) throw new Error('Unauthorized')
   return { supabase, user }
 }
@@ -43,13 +47,15 @@ export async function createSoldTransaction(
   const net_profit =
     sold_price - cost_basis - fees - shipping_cost - packaging_cost
 
-  const { data, error } = await supabase
-    .from('sold_transactions')
-    .insert({
-      ...parsed.data,
-      user_id:    user.id,
-      net_profit: parseFloat(net_profit.toFixed(2)),
-    })
+  const insertPayload = {
+    ...parsed.data,
+    user_id: user.id,
+    net_profit: parseFloat(net_profit.toFixed(2)),
+  }
+
+  const { data, error } = await (supabase
+    .from('sold_transactions') as any)
+    .insert(insertPayload)
     .select()
     .single()
 
@@ -60,8 +66,8 @@ export async function createSoldTransaction(
 
   // If linked to an inventory item, mark it as sold
   if (parsed.data.inventory_item_id) {
-    await supabase
-      .from('inventory_items')
+    await (supabase
+      .from('inventory_items') as any)
       .update({ status: 'sold', updated_at: new Date().toISOString() })
       .eq('id', parsed.data.inventory_item_id)
       .eq('user_id', user.id)
@@ -70,6 +76,7 @@ export async function createSoldTransaction(
   revalidatePath('/sold')
   revalidatePath('/dashboard')
   revalidatePath('/analytics')
+
   return { success: true, data }
 }
 
@@ -97,31 +104,42 @@ export async function updateSoldTransaction(
   // Re-compute net_profit from updated fields if any financials changed
   let netProfitUpdate: { net_profit?: number } = {}
   const hasFinancialChange = [
-    'sold_price', 'fees', 'shipping_cost', 'packaging_cost', 'cost_basis',
-  ].some(k => k in parsed.data)
+    'sold_price',
+    'fees',
+    'shipping_cost',
+    'packaging_cost',
+    'cost_basis',
+  ].some((k) => k in parsed.data)
 
   if (hasFinancialChange) {
     // Fetch current values to fill in any missing fields
-    const { data: current } = await supabase
-      .from('sold_transactions')
+    const { data: current } = await (supabase
+      .from('sold_transactions') as any)
       .select('sold_price, fees, shipping_cost, packaging_cost, cost_basis')
       .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
     if (current) {
-      const sp  = parsed.data.sold_price     ?? current.sold_price
-      const f   = parsed.data.fees           ?? current.fees
-      const sh  = parsed.data.shipping_cost  ?? current.shipping_cost
-      const pk  = parsed.data.packaging_cost ?? current.packaging_cost
-      const cb  = parsed.data.cost_basis     ?? current.cost_basis
-      netProfitUpdate = { net_profit: parseFloat((sp - cb - f - sh - pk).toFixed(2)) }
+      const c = current as any
+
+      const sp = parsed.data.sold_price ?? c.sold_price
+      const f = parsed.data.fees ?? c.fees
+      const sh = parsed.data.shipping_cost ?? c.shipping_cost
+      const pk = parsed.data.packaging_cost ?? c.packaging_cost
+      const cb = parsed.data.cost_basis ?? c.cost_basis
+
+      netProfitUpdate = {
+        net_profit: parseFloat((sp - cb - f - sh - pk).toFixed(2)),
+      }
     }
   }
 
-  const { data, error } = await supabase
-    .from('sold_transactions')
-    .update({ ...parsed.data, ...netProfitUpdate })
+  const updatePayload = { ...parsed.data, ...netProfitUpdate }
+
+  const { data, error } = await (supabase
+    .from('sold_transactions') as any)
+    .update(updatePayload)
     .eq('id', id)
     .eq('user_id', user.id)
     .select()
@@ -135,6 +153,7 @@ export async function updateSoldTransaction(
   revalidatePath('/sold')
   revalidatePath('/dashboard')
   revalidatePath('/analytics')
+
   return { success: true, data }
 }
 
@@ -150,9 +169,8 @@ export async function deleteSoldTransaction(
   }
 
   // Fetch the transaction first so we know which inventory item to revert.
-  // Use .select('inventory_item_id') to minimise data transferred.
-  const { data: tx, error: fetchError } = await supabase
-    .from('sold_transactions')
+  const { data: tx, error: fetchError } = await (supabase
+    .from('sold_transactions') as any)
     .select('inventory_item_id')
     .eq('id', id)
     .eq('user_id', user.id)
@@ -164,8 +182,8 @@ export async function deleteSoldTransaction(
   }
 
   // Delete the transaction
-  const { error: deleteError } = await supabase
-    .from('sold_transactions')
+  const { error: deleteError } = await (supabase
+    .from('sold_transactions') as any)
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)
@@ -176,13 +194,15 @@ export async function deleteSoldTransaction(
   }
 
   // Revert the linked inventory item back to in_inventory.
-  // Only runs when the sale was linked to a specific item.
-  if (tx.inventory_item_id) {
-    const { error: revertError } = await supabase
-      .from('inventory_items')
+  const saleTx = tx as any
+
+  if (saleTx?.inventory_item_id) {
+    const { error: revertError } = await (supabase
+      .from('inventory_items') as any)
       .update({ status: 'in_inventory', updated_at: new Date().toISOString() })
-      .eq('id', tx.inventory_item_id)
-      .eq('user_id', user.id) // RLS belt-and-suspenders
+      .eq('id', saleTx.inventory_item_id)
+      .eq('user_id', user.id)
+
     if (revertError) {
       // Non-fatal: the sale is gone; log but don't surface to user
       console.error('[deleteSoldTransaction] revert inventory', revertError.message)
@@ -193,5 +213,6 @@ export async function deleteSoldTransaction(
   revalidatePath('/inventory')
   revalidatePath('/dashboard')
   revalidatePath('/analytics')
+
   return { success: true, data: undefined }
 }
