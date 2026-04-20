@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Plus, Search, TrendingUp, X } from 'lucide-react'
-import { useSoldTransactions, useSalesKPIs, useDeleteSoldTransaction } from '@/hooks/useSoldLog'
+import { useSoldTransactions, computeSalesKPIs, useDeleteSoldTransaction } from '@/hooks/useSoldLog'
 import { useAppStore } from '@/stores/appStore'
 import { SoldCard } from '@/components/sold/SoldCard'
 import { AddSaleForm } from '@/components/sold/AddSaleForm'
@@ -45,7 +45,7 @@ export default function SoldPage() {
     return result
   }, [transactions, soldLogFilters])
 
-  const kpis = useSalesKPIs(filtered)
+  const kpis = useMemo(() => computeSalesKPIs(filtered), [filtered])
 
   return (
     <div className="page-container space-y-4 animate-fade-in">

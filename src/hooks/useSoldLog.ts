@@ -25,6 +25,9 @@ export function useSoldTransactions() {
         .from('sold_transactions')
         .select('*')
         .order('date_sold', { ascending: false })
+        // Safety limit: prevents unbounded payloads as sales history grows.
+        // TODO: replace with cursor-based pagination when users approach this limit.
+        .limit(1000)
 
       if (error) throw new Error(error.message)
       return data ?? []
@@ -91,9 +94,11 @@ export function useDeleteSoldTransaction() {
   })
 }
 
-// ─── Computed KPIs (client-side, from cached data) ───────────
+// ─── Computed KPIs (pure function — not a hook) ───────────────
+// Named computeSalesKPIs (not useSalesKPIs) so it can be safely
+// called inside useMemo without violating the Rules of Hooks.
 
-export function useSalesKPIs(transactions: SoldTransactionRow[]) {
+export function computeSalesKPIs(transactions: SoldTransactionRow[]) {
   const totalRevenue  = transactions.reduce((s, t) => s + t.sold_price, 0)
   const totalProfit   = transactions.reduce((s, t) => s + (t.net_profit ?? 0), 0)
   const totalFees     = transactions.reduce((s, t) => s + t.fees, 0)

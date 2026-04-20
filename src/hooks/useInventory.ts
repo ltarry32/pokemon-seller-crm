@@ -32,6 +32,10 @@ export function useInventoryItems() {
         .from('inventory_items')
         .select('*')
         .order('created_at', { ascending: false })
+        // Safety limit: prevents unbounded payloads as inventory grows.
+        // At >500 items, paginate instead of loading the full list.
+        // TODO: replace with cursor-based pagination when users approach this limit.
+        .limit(500)
 
       if (error) throw new Error(error.message)
       return data ?? []

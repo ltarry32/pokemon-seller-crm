@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useMemo } from 'react'
 import { useInventoryItems } from '@/hooks/useInventory'
-import { useSoldTransactions, useSalesKPIs } from '@/hooks/useSoldLog'
+import { useSoldTransactions, computeSalesKPIs } from '@/hooks/useSoldLog'
 import { StatCard } from '@/components/ui/Card'
 import { ProfitTrendChart } from '@/components/dashboard/ProfitChart'
 import { InventoryCard } from '@/components/inventory/InventoryCard'
@@ -54,16 +55,21 @@ export default function DashboardPage() {
   const { data: inventory = [],     isLoading: invLoading }  = useInventoryItems()
   const { data: transactions = [],  isLoading: salesLoading } = useSoldTransactions()
 
-  const invKPIs    = computeInventoryKPIs(inventory)
-  const salesKPIs  = useSalesKPIs(transactions)
-  const monthlyData = groupByMonth(transactions)
+  // Memoized so these O(n) passes only rerun when the underlying data changes,
+  // not on every re-render triggered by parent state or context updates.
+  const invKPIs    = useMemo(() => computeInventoryKPIs(inventory),  [inventory])
+  const salesKPIs  = useMemo(() => computeSalesKPIs(transactions),   [transactions])
+  const monthlyData = useMemo(() => groupByMonth(transactions),      [transactions])
 
-  const topItems    = [...inventory]
-    .filter(i => i.status !== 'sold')
-    .sort((a, b) => (b.current_market_price - b.cost_basis) - (a.current_market_price - a.cost_basis))
-    .slice(0, 3)
+  const topItems   = useMemo(() =>
+    [...inventory]
+      .filter(i => i.status !== 'sold')
+      .sort((a, b) => (b.current_market_price - b.cost_basis) - (a.current_market_price - a.cost_basis))
+      .slice(0, 3),
+    [inventory]
+  )
 
-  const recentSales = transactions.slice(0, 3)
+  const recentSales = useMemo(() => transactions.slice(0, 3), [transactions])
 
   const isLoading = invLoading || salesLoading
   const isEmpty   = !isLoading && inventory.length === 0 && transactions.length === 0
