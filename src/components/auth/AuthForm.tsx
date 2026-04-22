@@ -92,7 +92,7 @@ return
         )}
 
         {/* Success banner */}
-        {success && (
+        {success && success.includes('Account created') && (
           <div className="flex items-start gap-3 p-3 mb-4 bg-green-500/10 border border-green-500/30 rounded-2xl animate-fade-in">
             <CheckCircle className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
             <p className="text-sm text-green-300">{success}</p>
