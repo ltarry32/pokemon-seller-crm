@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { Eye, EyeOff, Zap, AlertCircle, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { cn } from '@/lib/utils'
 import { signIn, signUp } from '@/lib/actions/auth'
 
 type Mode = 'login' | 'register'
@@ -16,28 +15,31 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ mode }: AuthFormProps) {
-  const router       = useRouter()
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo   = searchParams.get('redirectTo') ?? '/dashboard'
+  const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
 
-  const [loading,   setLoading]   = useState(false)
-  const [error,     setError]     = useState<string | null>(null)
-  const [success,   setSuccess]   = useState<string | null>(null)
-  const [showPass,  setShowPass]  = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [showPass, setShowPass] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
 
   const [form, setForm] = useState({
-    email:         '',
-    password:      '',
-    full_name:     '',
+    email: '',
+    password: '',
+    full_name: '',
     business_name: '',
   })
 
   const set = (key: string, value: string) => {
     setForm(prev => ({ ...prev, [key]: value }))
-    // Clear field error on change
     if (fieldErrors[key]) {
-      setFieldErrors(prev => { const n = { ...prev }; delete n[key]; return n })
+      setFieldErrors(prev => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
     }
   }
 
@@ -48,9 +50,10 @@ export function AuthForm({ mode }: AuthFormProps) {
     setSuccess(null)
     setFieldErrors({})
 
-    const result = mode === 'login'
-      ? await signIn({ email: form.email, password: form.password })
-      : await signUp(form)
+    const result =
+      mode === 'login'
+        ? await signIn({ email: form.email, password: form.password })
+        : await signUp(form)
 
     setLoading(false)
 
@@ -60,11 +63,16 @@ export function AuthForm({ mode }: AuthFormProps) {
       return
     }
 
-    setSuccess('Account created successfully. You can sign in now.')
-return
+    if (mode === 'login') {
+      router.push(redirectTo)
+      router.refresh()
+      return
+    }
 
-    router.push(redirectTo)
-    router.refresh()
+    if (mode === 'register') {
+      setSuccess('Account created successfully. You can sign in now.')
+      return
+    }
   }
 
   const fieldError = (key: string) => fieldErrors[key]?.[0]
@@ -72,7 +80,6 @@ return
   return (
     <div className="min-h-screen bg-surface-base flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center shadow-glow-orange mb-3">
             <Zap className="w-6 h-6 text-white" />
@@ -83,7 +90,6 @@ return
           </p>
         </div>
 
-        {/* Error banner */}
         {error && (
           <div className="flex items-start gap-3 p-3 mb-4 bg-red-500/10 border border-red-500/30 rounded-2xl animate-fade-in">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -91,15 +97,13 @@ return
           </div>
         )}
 
-        {/* Success banner */}
-        {success && success.includes('Account created') && (
+        {mode === 'register' && success && success.includes('Account created') && (
           <div className="flex items-start gap-3 p-3 mb-4 bg-green-500/10 border border-green-500/30 rounded-2xl animate-fade-in">
             <CheckCircle className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
             <p className="text-sm text-green-300">{success}</p>
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="bg-surface-1 border border-zinc-800 rounded-3xl p-6 space-y-4">
           {mode === 'register' && (
             <>
@@ -132,7 +136,7 @@ return
             value={form.email}
             onChange={e => set('email', e.target.value)}
             error={fieldError('email')}
-            autoComplete={mode === 'login' ? 'email' : 'email'}
+            autoComplete="email"
             required
           />
 
@@ -165,7 +169,6 @@ return
           </Button>
         </form>
 
-        {/* Toggle mode */}
         <p className="text-center text-sm text-zinc-500 mt-4">
           {mode === 'login' ? (
             <>
@@ -184,7 +187,6 @@ return
           )}
         </p>
 
-        {/* Footer note */}
         <p className="text-center text-xs text-zinc-700 mt-6">
           By continuing, you agree to our terms of service and privacy policy.
         </p>
