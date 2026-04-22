@@ -60,7 +60,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       return
     }
 
-    setSuccess('Check your email to confirm your account before signing in.')
+    setSuccess('Account created successfully. You can sign in now.')
 return
 
     router.push(redirectTo)
